@@ -1,5 +1,5 @@
 {
-  "name": "template-generator",
+  "name": "@kozmonos/template-generator",
   "version": "0.0.1",
   "description": "",
   "main": "index.js",
