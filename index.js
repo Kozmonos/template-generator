@@ -64,7 +64,7 @@ const run = async (inq) => {
 			type: 'list',
 			name: 'ci',
 			message: 'Choose CI:',
-			choices: Object.keys(CI_PATH_NAME)
+			choices: [Object.keys(CI_PATH_NAME), 'None']
 		})
 
 
@@ -76,10 +76,13 @@ const run = async (inq) => {
 	const CI_FOLDER_NAME = CI_PATH_NAME[choices.ci]
 
 	globBeDeleteCIFolder(CI_FOLDER_NAME).forEach(CIFolder => {
-		fs.rmSync(`${MAIN_PATH}/${CIFolder}`, { recursive: true })
+		if(fs.existsSync(`${MAIN_PATH}/${CIFolder}`))
+			fs.rmSync(`${MAIN_PATH}/${CIFolder}`, { recursive: true })
 	})
 
-	fs.renameSync(`${MAIN_PATH}/${CI_FOLDER_NAME}`, `${ROOT_PATH}/${CI_FOLDER_NAME}`)
+	if(choices.ci != 'None' && fs.existsSync(`${MAIN_PATH}/${CI_FOLDER_NAME}`))
+		fs.renameSync(`${MAIN_PATH}/${CI_FOLDER_NAME}`, `${ROOT_PATH}/${CI_FOLDER_NAME}`)
+
 }
 	globFiles().forEach(file => {
 		const currentTarget = MAIN_PATH + '/' + file
