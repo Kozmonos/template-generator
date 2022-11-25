@@ -69,7 +69,7 @@ module.exports.create = async (options) => {
 		}
 	])
 
-	const TARGET_README_PATH = `${currentUserPath}/src/README.md`
+	const TARGET_README_PATH = `${currentUserPath}/README.md`
 
 	const TEMPLATE_README_CONTENT = fs.readFileSync(`${appPath}/template/README.md`).toString()
 
