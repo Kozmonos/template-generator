@@ -6,7 +6,7 @@ var path = require('path');
 //------------------------//
 
 
-const ROOT_PATH = process.cwd(); 
+const ROOT_PATH = process.cwd();
 
 MAIN_PATH = `${ROOT_PATH}/src`
 
@@ -22,17 +22,32 @@ CI_PATH_NAME = {
 
 //------------------------//
 
-const deleteConfigFile = () => {
-	fs.rmSync(`${ROOT_PATH}/index.js`)
-	fs.rmSync(`${ROOT_PATH}/node_modules`,{recursive: true})
-	fs.rmSync(`${ROOT_PATH}/package.json`)
-	fs.rmSync(`${ROOT_PATH}/package-lock.json`)
-}
-const deleteSrcFolder = () => {
-	fs.rmSync(`${ROOT_PATH}/src`, {recursive: true})
+
+const ifExistsDelete = (path) => {
+	if (fs.existsSync(path)) {
+		fs.rmSync(path, { recursive: true });
+	}
 }
 
-const globFiles = () => {return glob.sync('**/*.*', { cwd: MAIN_PATH })}
+const deleteConfigFile = () => {
+
+	const targetDeleteList = [
+		"index.js",
+		".gitignore",
+		"node_modules",
+		"package.json",
+		"package-lock.json"
+	]
+
+	targetDeleteList.forEach(targetDelete => {
+		ifExistsDelete(`${ROOT_PATH}/${targetDelete}`)
+	});
+}
+const deleteSrcFolder = () => {
+	fs.rmSync(`${ROOT_PATH}/src`, { recursive: true })
+}
+
+const globFiles = () => { return glob.sync('**/*.*', { cwd: MAIN_PATH }) }
 
 const globBeDeleteCIFolder = (selectedCIFolderName) => {
 	return glob.sync('.*', { cwd: MAIN_PATH }).filter(file => Object.values(CI_PATH_NAME).includes(file) && file !== selectedCIFolderName)
@@ -44,46 +59,71 @@ const isGitUrl = (str) => {
 };
 
 const run = async (inq) => {
-	
+
 	deleteConfigFile()
 
-	const {  ci,...config } = inq;
+	const { ci, value, ...config } = inq;
 
-	const inqConfig = [
-		{
+	const defaultQuestions = {
+		name: {
 			type: 'input',
-			name: 'name',
 			message: 'Project name:',
+			default: DEFAULT_PROJECT_NAME.replaceAll("-", " ").replaceAll("_", " ")
+		},
+		description: {
+			type: 'input',
+			message: 'Project description:',
 			default: DEFAULT_PROJECT_NAME
 		},
+		github_username: {
+			type: 'input',
+			message: 'Github username:'
+		},
+		github_repo: {
+			type: 'input',
+			message: 'Github repo:'
+		}
+	}
+
+
+	const inqConfig = [
+		...Object.keys(defaultQuestions).map(defaultQuestionName => {
+			return (!value || !(value?.hasOwnProperty(defaultQuestionName)))
+				? {
+					...defaultQuestions[defaultQuestionName],
+					name: defaultQuestionName
+				}
+				: null
+		}).filter(Boolean),
 		...Object.values(config)
 	]
 
-	if(ci)
+	if (ci)
 		inqConfig.push({
 			type: 'list',
 			name: 'ci',
 			message: 'Choose CI:',
-			choices: [Object.keys(CI_PATH_NAME), 'None']
+			choices: [...Object.keys(CI_PATH_NAME), 'None']
 		})
 
 
-	const choices = await inquirer.prompt(inqConfig)
+	const choices = { ...await inquirer.prompt(inqConfig), ...value }
+
 	console.log({ choices })
 
 
-	if(ci){
-	const CI_FOLDER_NAME = CI_PATH_NAME[choices.ci]
+	if (ci) {
+		const CI_FOLDER_NAME = CI_PATH_NAME[choices.ci]
 
-	globBeDeleteCIFolder(CI_FOLDER_NAME).forEach(CIFolder => {
-		if(fs.existsSync(`${MAIN_PATH}/${CIFolder}`))
-			fs.rmSync(`${MAIN_PATH}/${CIFolder}`, { recursive: true })
-	})
+		globBeDeleteCIFolder(CI_FOLDER_NAME).forEach(CIFolder => {
+			if (fs.existsSync(`${MAIN_PATH}/${CIFolder}`))
+				fs.rmSync(`${MAIN_PATH}/${CIFolder}`, { recursive: true })
+		})
 
-	if(choices.ci != 'None' && fs.existsSync(`${MAIN_PATH}/${CI_FOLDER_NAME}`))
-		fs.renameSync(`${MAIN_PATH}/${CI_FOLDER_NAME}`, `${ROOT_PATH}/${CI_FOLDER_NAME}`)
+		if (choices.ci != 'None' && fs.existsSync(`${MAIN_PATH}/${CI_FOLDER_NAME}`))
+			fs.renameSync(`${MAIN_PATH}/${CI_FOLDER_NAME}`, `${ROOT_PATH}/${CI_FOLDER_NAME}`)
 
-}
+	}
 	globFiles().forEach(file => {
 		const currentTarget = MAIN_PATH + '/' + file
 		const newTarget = ROOT_PATH + '/' + file

@@ -2,6 +2,10 @@
 ```bash
 npm i -g @kozmonos/template-generator 
 ```
+if you are using Linux or Mac, you may need to run the command with sudo.
+```bash
+sudo npm i -g @kozmonos/template-generator 
+```
 
 ### Usage
 ```bash
